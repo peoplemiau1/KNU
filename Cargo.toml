@@ -1,0 +1,22 @@
+[package]
+name = "knu"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "kecho"
+path = "src/bin/kecho.rs"
+
+[[bin]]
+name = "kcat"
+path = "src/bin/kcat.rs"
+
+[[bin]]
+name = "kbash"
+path = "src/bin/kbash.rs"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
