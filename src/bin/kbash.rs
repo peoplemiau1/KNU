@@ -5,6 +5,8 @@ use knu::io;
 use knu::proc;
 use knu::syscalls;
 
+knu::entry_point!();
+
 const MAX_LINE: usize = 256;
 
 unsafe fn read_line(buf: &mut [u8]) -> usize {

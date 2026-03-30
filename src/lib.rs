@@ -7,15 +7,20 @@ pub mod string;
 pub mod panic;
 pub mod fs;
 
-#[cfg(target_os = "linux")]
-core::arch::global_asm!(
-    ".global _start",
-    "_start:",
-    "mov rdi, [rsp]",
-    "lea rsi, [rsp + 8]",
-    "and rsp, -16",
-    "call knu_main",
-);
+#[macro_export]
+macro_rules! entry_point {
+    () => {
+        #[cfg(target_os = "linux")]
+        core::arch::global_asm!(
+            ".global _start",
+            "_start:",
+            "mov rdi, [rsp]",
+            "lea rsi, [rsp + 8]",
+            "and rsp, -16",
+            "call knu_main",
+        );
+    };
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn memset(s: *mut u8, c: i32, n: usize) -> *mut u8 {
@@ -35,4 +40,9 @@ pub unsafe extern "C" fn memcpy(dest: *mut u8, src: *const u8, n: usize) -> *mut
         i += 1;
     }
     dest
+}
+
+#[no_mangle]
+pub extern "C" fn knu_hello() {
+    io::print("Hello from KNU Shared Library (no_std, direct syscalls)!\n");
 }

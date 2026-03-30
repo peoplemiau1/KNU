@@ -3,6 +3,10 @@ name = "knu"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "knu"
+crate-type = ["cdylib", "rlib"]
+
 [[bin]]
 name = "kecho"
 path = "src/bin/kecho.rs"
