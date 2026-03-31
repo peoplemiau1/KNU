@@ -1,30 +1,28 @@
+pub use crate::intrinsics::memcpy;
 use crate::sys;
 use crate::error::SysError;
+use alloc::string::String;
 
 pub const O_RDONLY: i32 = 0;
 pub const O_WRONLY: i32 = 1;
 pub const O_CREAT: i32 = 64;
 pub const O_TRUNC: i32 = 512;
 
-fn with_cstr<T, F: FnOnce(*const u8) -> T>(s: &str, f: F) -> Result<T, SysError> {
-    if s.len() >= 4096 {
-        return Err(SysError::NameTooLong);
-    }
-    let mut buf = [0u8; 4096];
-    let bytes = s.as_bytes();
-    let mut i = 0;
-    while i < bytes.len() {
-        buf[i] = bytes[i];
-        i += 1;
-    }
-    buf[i] = 0;
-    Ok(f(buf.as_ptr()))
+pub fn to_cstr(s: &str) -> String {
+    let mut cstr = String::from(s);
+    cstr.push('\0');
+    cstr
 }
 
 pub fn open_file(path: &str, flags: i32, mode: i32) -> Result<i32, SysError> {
-    with_cstr(path, |ptr| unsafe { sys::open(ptr, flags, mode) }).and_then(|fd| {
-        if fd >= 0 { Ok(fd as i32) } else { Err(SysError::from_isize(fd)) }
-    })
+    if path.len() >= 4096 { return Err(SysError::NameTooLong); }
+    let mut buf = [0u8; 4096];
+    let bytes = path.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() { buf[i] = bytes[i]; i += 1; }
+    buf[i] = 0;
+    let fd = unsafe { sys::open(buf.as_ptr(), flags, mode) };
+    if fd >= 0 { Ok(fd as i32) } else { Err(SysError::from_isize(fd)) }
 }
 
 pub fn read_fd(fd: i32, buf: &mut [u8]) -> Result<usize, SysError> {
@@ -42,41 +40,56 @@ pub fn getcwd(buf: &mut [u8]) -> Result<usize, SysError> {
 }
 
 pub fn chdir(path: &str) -> Result<(), SysError> {
-    with_cstr(path, |ptr| unsafe { sys::chdir(ptr) }).and_then(|res| {
-        if res < 0 { Err(SysError::from_isize(res)) } else { Ok(()) }
-    })
+    let mut buf = [0u8; 4096];
+    let b = path.as_bytes();
+    let mut i = 0;
+    while i < b.len() { buf[i] = b[i]; i += 1; }
+    buf[i] = 0;
+    let res = unsafe { sys::chdir(buf.as_ptr()) };
+    if res < 0 { Err(SysError::from_isize(res)) } else { Ok(()) }
 }
 
 pub fn mkdir(path: &str, mode: i32) -> Result<(), SysError> {
-    with_cstr(path, |ptr| unsafe { sys::mkdir(ptr, mode) }).and_then(|res| {
-        if res < 0 { Err(SysError::from_isize(res)) } else { Ok(()) }
-    })
+    let mut buf = [0u8; 4096];
+    let b = path.as_bytes();
+    let mut i = 0;
+    while i < b.len() { buf[i] = b[i]; i += 1; }
+    buf[i] = 0;
+    let res = unsafe { sys::mkdir(buf.as_ptr(), mode) };
+    if res < 0 { Err(SysError::from_isize(res)) } else { Ok(()) }
 }
 
 pub fn unlink(path: &str) -> Result<(), SysError> {
-    with_cstr(path, |ptr| unsafe { sys::unlink(ptr) }).and_then(|res| {
-        if res < 0 { Err(SysError::from_isize(res)) } else { Ok(()) }
-    })
+    let mut buf = [0u8; 4096];
+    let b = path.as_bytes();
+    let mut i = 0;
+    while i < b.len() { buf[i] = b[i]; i += 1; }
+    buf[i] = 0;
+    let res = unsafe { sys::unlink(buf.as_ptr()) };
+    if res < 0 { Err(SysError::from_isize(res)) } else { Ok(()) }
 }
 
 pub fn touch(path: &str) -> Result<(), SysError> {
     match open_file(path, O_CREAT, 0o644) {
-        Ok(fd) => {
-            close_fd(fd);
-            Ok(())
-        }
+        Ok(fd) => { close_fd(fd); Ok(()) }
         Err(e) => Err(e),
     }
+}
+
+pub fn pipe() -> Result<[i32; 2], SysError> {
+    let mut fds = [0i32; 2];
+    let res = unsafe { sys::pipe(fds.as_mut_ptr()) };
+    if res < 0 { Err(SysError::from_isize(res)) } else { Ok(fds) }
+}
+
+pub fn dup2(oldfd: i32, newfd: i32) {
+    unsafe { sys::dup2(oldfd, newfd) };
 }
 
 pub fn redirect_out(path: &str) -> Result<(), SysError> {
     let flags = O_WRONLY | O_CREAT | O_TRUNC;
     match open_file(path, flags, 0o644) {
-        Ok(fd) => {
-            unsafe { sys::dup2(fd, 1) };
-            close_fd(fd);
-            Ok(())
-        }
+        Ok(fd) => { dup2(fd, 1); close_fd(fd); Ok(()) }
         Err(e) => Err(e),
     }
 }

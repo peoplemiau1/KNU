@@ -16,10 +16,22 @@ pub mod libc;
 #[macro_export]
 macro_rules! entry_point {
     () => {
-        #[no_mangle]
-        pub extern "C" fn _start(argc: isize, argv: *const *const u8, envp: *const *const u8) -> ! {
-            knu_main(argc, argv, envp)
-        }
+        core::arch::global_asm!(
+            ".section .text",
+            ".global _start",
+            "_start:",
+            "mov rdi, [rsp]",
+            "lea rsi, [rsp + 8]",
+            "mov rdx, rdi",
+            "inc rdx",
+            "shl rdx, 3",
+            "add rdx, rsi",
+            "and rsp, -16",
+            "call knu_main",
+            "mov rdi, 1",
+            "mov rax, 60",
+            "syscall"
+        );
     };
 }
 
