@@ -18,11 +18,11 @@ pub fn write_bytes(buf: *const u8, len: usize) {
     }
 }
 
-pub fn read_stdin(buf: *mut u8, count: usize) -> isize {
+pub fn read_stdin(buf: &mut [u8]) -> isize {
     unsafe {
         #[cfg(target_os = "linux")]
-        return syscalls::read(0, buf, count);
+        return syscalls::read(0, buf.as_mut_ptr(), buf.len());
         #[cfg(not(target_os = "linux"))]
-        return syscalls::knu_sys_read(0, buf, count);
+        return syscalls::knu_sys_read(0, buf.as_mut_ptr(), buf.len());
     }
 }

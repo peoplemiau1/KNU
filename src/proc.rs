@@ -1,4 +1,5 @@
 use crate::syscalls;
+use alloc::string::String;
 
 pub fn exit(code: i32) -> ! {
     unsafe {
@@ -9,21 +10,21 @@ pub fn exit(code: i32) -> ! {
     }
 }
 
+pub fn get_pid() -> isize {
+    unsafe {
+        #[cfg(target_os = "linux")]
+        return syscalls::getpid();
+        #[cfg(not(target_os = "linux"))]
+        return syscalls::knu_sys_getpid();
+    }
+}
+
 pub fn fork() -> isize {
     unsafe {
         #[cfg(target_os = "linux")]
         return syscalls::fork();
         #[cfg(not(target_os = "linux"))]
         return syscalls::knu_sys_fork();
-    }
-}
-
-pub fn execve(path: *const u8, argv: *const *const u8, envp: *const *const u8) -> isize {
-    unsafe {
-        #[cfg(target_os = "linux")]
-        return syscalls::execve(path, argv, envp);
-        #[cfg(not(target_os = "linux"))]
-        return syscalls::knu_sys_execve(path, argv, envp);
     }
 }
 
@@ -37,14 +38,25 @@ pub fn waitpid(pid: isize) {
     }
 }
 
-#[cfg(target_os = "linux")]
+pub fn execve(path: *const u8, args: *const *const u8, env: *const *const u8) -> isize {
+    unsafe {
+        #[cfg(target_os = "linux")]
+        return syscalls::execve(path, args, env);
+        #[cfg(not(target_os = "linux"))]
+        return syscalls::knu_sys_execve(path, args, env);
+    }
+}
+
+pub fn exec(path: &str, args: &[*const u8], env: &[*const u8]) -> isize {
+    let mut path_c = String::from(path);
+    path_c.push('\0');
+    execve(path_c.as_ptr(), args.as_ptr(), env.as_ptr())
+}
+
 #[no_mangle]
 pub extern "C" fn rust_eh_personality() {}
 
-#[cfg(target_os = "linux")]
 #[no_mangle]
 pub extern "C" fn _Unwind_Resume() -> ! {
-    unsafe {
-        syscalls::exit(1);
-    }
+    exit(1);
 }
