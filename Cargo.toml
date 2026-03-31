@@ -1,30 +1,13 @@
 [package]
 name = "knu"
-version = "0.1.0"
-edition = "2021"
+version = "0.7.2"
+edition = "2026"
 
-[lib]
-name = "knu"
-crate-type = ["cdylib", "rlib"]
-
-[[bin]]
-name = "kecho"
-path = "src/bin/kecho.rs"
-
-[[bin]]
-name = "kcat"
-path = "src/bin/kcat.rs"
-
-[[bin]]
-name = "kbash"
-path = "src/bin/kbash.rs"
-
-[profile.dev]
-panic = "abort"
+[dependencies]
 
 [profile.release]
-panic = "abort"        
-opt-level = "z"       
-lto = true            
-codegen-units = 1      
-strip = true           
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
