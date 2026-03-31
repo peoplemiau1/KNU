@@ -23,4 +23,8 @@ path = "src/bin/kbash.rs"
 panic = "abort"
 
 [profile.release]
-panic = "abort"
+panic = "abort"        
+opt-level = "z"       
+lto = true            
+codegen-units = 1      
+strip = true           

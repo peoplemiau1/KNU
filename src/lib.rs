@@ -1,11 +1,17 @@
 #![no_std]
 
+extern crate alloc;
+
 pub mod syscalls;
 pub mod io;
 pub mod proc;
 pub mod string;
 pub mod panic;
 pub mod fs;
+pub mod allocator;
+
+#[global_allocator]
+static ALLOCATOR: allocator::KnuAllocator = allocator::KnuAllocator;
 
 #[macro_export]
 macro_rules! entry_point {
@@ -16,6 +22,7 @@ macro_rules! entry_point {
             "_start:",
             "mov rdi, [rsp]",
             "lea rsi, [rsp + 8]",
+            "lea rdx, [rsi + rdi * 8 + 8]",
             "and rsp, -16",
             "call knu_main",
         );

@@ -40,3 +40,11 @@ pub fn waitpid(pid: isize) {
 #[cfg(target_os = "linux")]
 #[no_mangle]
 pub extern "C" fn rust_eh_personality() {}
+
+#[cfg(target_os = "linux")]
+#[no_mangle]
+pub extern "C" fn _Unwind_Resume() -> ! {
+    unsafe {
+        syscalls::exit(1);
+    }
+}
