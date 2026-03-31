@@ -1,4 +1,14 @@
 /target
 /releases
+/tinycc
 Cargo.lock
 **/*.rs.bk
+*.o
+*.a
+*.so
+kbuilt_app
+ktest_c
+knu_app
+all_code.txt
+project_summary.txt
+.DS_Store

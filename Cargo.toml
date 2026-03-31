@@ -1,7 +1,22 @@
 [package]
 name = "knu"
 version = "0.7.2"
-edition = "2026"
+edition = "2021"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "kbash"
+path = "src/coreutils/kbash.rs"
+
+[[bin]]
+name = "kcat"
+path = "src/coreutils/kcat.rs"
+
+[[bin]]
+name = "kecho"
+path = "src/coreutils/kecho.rs"
 
 [dependencies]
 

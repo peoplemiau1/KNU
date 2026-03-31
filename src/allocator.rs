@@ -1,13 +1,15 @@
 use core::alloc::{GlobalAlloc, Layout};
 use core::ptr::null_mut;
-use crate::syscalls::{mmap, munmap};
 
 pub struct KnuAllocator;
 
 unsafe impl GlobalAlloc for KnuAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let size = layout.size();
-        let addr = mmap(
+        if size == 0 {
+            return null_mut();
+        }
+        let addr = crate::syscalls::mmap(
             null_mut(),
             size,
             3,
@@ -15,8 +17,7 @@ unsafe impl GlobalAlloc for KnuAllocator {
             -1,
             0,
         );
-        
-        if addr as isize == -1 {
+        if addr == -1 {
             null_mut()
         } else {
             addr as *mut u8
@@ -24,6 +25,11 @@ unsafe impl GlobalAlloc for KnuAllocator {
     }
 
     unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
-        munmap(ptr, layout.size());
+        if !ptr.is_null() && layout.size() > 0 {
+            crate::syscalls::munmap(ptr, layout.size());
+        }
     }
 }
+
+#[global_allocator]
+static ALLOCATOR: KnuAllocator = KnuAllocator;

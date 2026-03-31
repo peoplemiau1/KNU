@@ -1,45 +1,17 @@
 #!/bin/bash
-
 set -e
-
-# Цвета для вывода
-GREEN='\033[1;32m'
-BLUE='\033[1;34m'
-RED='\033[1;31m'
-NC='\033[0m'
-
-TARGET_DIR="$HOME/.cargo-target/x86_64-unknown-linux-gnu/release"
-
-echo -e "${BLUE}[*] Начинаем сборку KNU OS...${NC}"
-
-echo -e "${BLUE}[*] 1/4 Компиляция динамической библиотеки (libknu.so)...${NC}"
-cargo build --lib --target x86_64-unknown-linux-gnu --release
-
-echo -e "${BLUE}[*] 2/4 Компиляция оболочки (kbash)...${NC}"
-cargo build --bin kbash --target x86_64-unknown-linux-gnu --release
-
-echo -e "${BLUE}[*] 3/4 Очистка бинарников (strip) для минимального размера...${NC}"
-if [ -f "$TARGET_DIR/libknu.so" ]; then
-    strip "$TARGET_DIR/libknu.so"
-fi
-if [ -f "$TARGET_DIR/kbash" ]; then
-    strip "$TARGET_DIR/kbash"
-fi
-
-echo -e "${BLUE}[*] 4/4 Копирование в папку releases/...${NC}"
+TARGET_DIR="./target"
+echo -e "\x1b[38;5;213m[*] Building KNU OS Library and Binaries...\x1b[0m"
+cargo build --release --lib --target-dir $TARGET_DIR
+cargo build --release --bins --target-dir $TARGET_DIR
 mkdir -p releases
-cp "$TARGET_DIR/libknu.so" releases/
-cp "$TARGET_DIR/kbash" releases/
-
-echo -e "${GREEN}[+] Сборка успешно завершена!${NC}"
-ls -lh releases/
-
-echo -e "\n${BLUE}[*] Запуск Python-теста библиотеки...${NC}"
-if [ -f "test.py" ]; then
-    python3 test.py
-else
-    echo -e "${RED}[-] Файл test.py не найден, пропускаем.${NC}"
-fi
-
-echo -e "\n${GREEN}[====== ГОТОВО ======]${NC}"
-echo -e "Чтобы запустить KNU Bash, введи: ${BLUE}./releases/kbash${NC}"
+cp $TARGET_DIR/release/libknu.so releases/
+cp $TARGET_DIR/release/kbash releases/
+cp $TARGET_DIR/release/kcat releases/
+cp $TARGET_DIR/release/kecho releases/
+echo -e "\x1b[38;5;213m[*] Building C-ABI Bridge test...\x1b[0m"
+gcc -c src/crt0.s -o releases/crt0.o
+gcc -ffreestanding -fno-builtin -nostdlib -c src/coreutils/test_libc.c -o releases/test_libc.o
+ld -nostdlib -dynamic-linker /lib64/ld-linux-x86-64.so.2 -rpath '$ORIGIN' releases/crt0.o releases/test_libc.o releases/libknu.so -o releases/ktest_c
+echo -e "\x1b[38;5;46m[+] Done! Run: ./releases/kbash\x1b[0m"
+echo -e "\x1b[38;5;46m[+] Test C code: ./releases/ktest_c\x1b[0m"
